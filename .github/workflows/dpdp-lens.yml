@@ -1,0 +1,67 @@
+# DPDP Lens for another repo (the demo repo Tanish18906/acme-tutornest). Copy to .github/workflows/dpdp-lens.yml.
+# Needs no change to the app's source. The engine is fetched from the public dpdp-lens repo and installed in editable mode:
+# a plain `pip install git+...#subdirectory=engine` would miss the policy file and contract/clauses.json.
+# Exit 0 pass or warn, 1 blocking findings that are not in the baseline, 2 scan incomplete or config invalid (never a pass).
+# Readiness report, not a compliance certificate.
+name: DPDP Lens
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+permissions:
+  contents: read
+  security-events: write  # upload-sarif
+env:
+  DPDP_LENS_REF: evolve  # for the demo, replace with the full commit sha of the dpdp-lens commit you tested
+jobs:
+  dpdp-lens:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install the engine
+        run: |
+          git init -q "$RUNNER_TEMP/dpdp-lens"
+          git -C "$RUNNER_TEMP/dpdp-lens" fetch -q --depth 1 https://github.com/Tanish18906/dpdp-lens.git "$DPDP_LENS_REF"
+          git -C "$RUNNER_TEMP/dpdp-lens" checkout -q FETCH_HEAD
+          pip install -q -e "$RUNNER_TEMP/dpdp-lens/engine"
+      - name: Scan
+        # With a committed .dpdp-baseline.json only new findings fail. Create it once: python -m dpdp_lens ci --repo-dir . --write-baseline
+        run: |
+          [ -f .dpdp-baseline.json ] && new_only=--new-only || new_only=
+          python -m dpdp_lens ci --repo-dir . $new_only --sarif dpdp-lens.sarif --json dpdp-lens.json --summary dpdp-lens.md
+      - name: Step summary
+        if: always()
+        run: '[ -f dpdp-lens.md ] && cat dpdp-lens.md >> "$GITHUB_STEP_SUMMARY" || echo "No summary: the scan did not run." >> "$GITHUB_STEP_SUMMARY"'
+      - name: Upload SARIF (public repos or GitHub Code Security)
+        if: always() && github.event.repository.private == false && hashFiles('dpdp-lens.sarif') != ''
+        continue-on-error: true  # a fork pull request token cannot write security events
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: dpdp-lens.sarif
+      - name: Keep the results
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: dpdp-lens
+          path: |
+            dpdp-lens.json
+            dpdp-lens.sarif
+          if-no-files-found: ignore
+      - name: Slack alert (when the decision is not pass)
+        if: always()
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          [ -n "$SLACK_WEBHOOK_URL" ] || exit 0
+          decision=$(jq -r '.evaluation.decision' dpdp-lens.json 2>/dev/null || echo error)
+          [ "$decision" = pass ] && exit 0
+          # the webhook URL goes to curl through a config file descriptor, never on the command line
+          jq -n --arg t "DPDP Lens: $decision on $GITHUB_REPOSITORY ($GITHUB_REF_NAME). $RUN_URL" '{text: $t}' |
+            curl -sS --fail -K <(printf 'url = "%s"\n' "$SLACK_WEBHOOK_URL") -H 'Content-Type: application/json' --data-binary @-

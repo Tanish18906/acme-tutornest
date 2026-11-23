@@ -1,0 +1,9 @@
+# Optional. Copy to .dpdp-lens.yml in the scanned repo. Every key has a default, so a missing file is fine.
+policy: default                  # "default" or a path (relative to this file) to your own policy yaml
+categories: [code, config, frontend]
+new_only: false                  # true: only findings that are not in the baseline can fail the run
+baseline: .dpdp-baseline.json
+# block_on: [critical, high]     # these severities block, whatever the policy says
+# warn_on: [medium]
+# suppress:                      # accepted findings: they never fail the run, and they stay listed in the JSON
+#   - {fingerprint: 0123456789abcdef, reason: "accepted until the Q1 release", by: tanish}

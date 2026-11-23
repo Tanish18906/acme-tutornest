@@ -1,0 +1,72 @@
+{
+  "version": 1,
+  "policy": "dpdp-lens-default@1.0.0",
+  "fingerprints": [
+    {
+      "fp": "ef0109e7f4674adb",
+      "check": "log_pii",
+      "title": "Personal data written to logs",
+      "file": "backend/app/main.py"
+    },
+    {
+      "fp": "da139836d1e8d16d",
+      "check": "config_secret_committed",
+      "title": "Secret value written in a file in the repository",
+      "file": "docker-compose.yml"
+    },
+    {
+      "fp": "5b2f1bbd88626a5b",
+      "check": "config_db_exposed",
+      "title": "Database port is published to every network interface",
+      "file": "docker-compose.yml"
+    },
+    {
+      "fp": "a61122c6b4abadbe",
+      "check": "config_secret_committed",
+      "title": "Secret value written in a file in the repository",
+      "file": "backend/.env"
+    },
+    {
+      "fp": "3d325f9a2cb1cd7b",
+      "check": "config_debug_enabled",
+      "title": "Debug mode is on",
+      "file": "backend/.env"
+    },
+    {
+      "fp": "c9b749f73eaafab9",
+      "check": "config_env_in_image",
+      "title": "Secrets are baked into the container image",
+      "file": "backend/Dockerfile"
+    },
+    {
+      "fp": "73139a2fe5585ece",
+      "check": "config_container_root",
+      "title": "Container runs as root",
+      "file": "backend/Dockerfile"
+    },
+    {
+      "fp": "1c71db1a4d7984d6",
+      "check": "config_secret_committed",
+      "title": "Secret value written in a file in the repository",
+      "file": "backend/app/auth.py"
+    },
+    {
+      "fp": "07615bda6faf9509",
+      "check": "config_cors_wildcard",
+      "title": "CORS allows every origin",
+      "file": "backend/app/main.py"
+    },
+    {
+      "fp": "3ba55f6ed6357613",
+      "check": "fe_pii_in_storage",
+      "title": "Personal data kept in browser storage",
+      "file": "frontend/src/App.jsx"
+    },
+    {
+      "fp": "0905dd640988ecb5",
+      "check": "consent_not_recorded",
+      "title": "No consent record found in the schema or source",
+      "file": "backend/app/main.py"
+    }
+  ]
+}
