@@ -1,0 +1,12 @@
+# PLANTED V12: synthetic, planted for the scanner demo. The legacy db service publishes its port with a weak password.
+services:
+  app:
+    build: ./backend
+    ports:
+      - "8000:8000"
+  db:
+    image: postgres:16
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_PASSWORD: admin
