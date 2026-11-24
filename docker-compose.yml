@@ -6,7 +6,6 @@ services:
       - "8000:8000"
   db:
     image: postgres:16
-    ports:
-      - "5432:5432"
+    # ports: (fixed: database port is not published to host interfaces)
     environment:
       POSTGRES_PASSWORD: admin
